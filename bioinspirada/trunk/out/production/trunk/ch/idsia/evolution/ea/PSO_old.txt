@@ -1,0 +1,126 @@
+package ch.idsia.evolution.ea;
+
+import ch.idsia.evolution.EA;
+import ch.idsia.evolution.Evolvable;
+import ch.idsia.evolution.MLP;
+import ch.idsia.agents.Agent;
+import ch.idsia.benchmark.tasks.Task;
+
+
+public class PSO_old implements EA {
+    private final Task task;
+    private MLP[][] particulas;
+    private MLP gBest;
+    private MLP[] pBests;
+    private float gBestScore;
+    private float[] pBestScores;
+    private int tamPop;
+    private int numInputs;
+    private int numHidden;
+    private int numOutputs;
+    private int evaluationRepetitions;
+    private int population;
+
+    public PSO_old(Task task, int populationSize, int numInputs, int numHidden, int numOutputs) {
+		this.particulas = new MLP[populationSize][2];
+		this.pBests = new MLP[populationSize];
+		this.pBestScores = new float[populationSize];
+        this.population = populationSize;
+		
+        for (int i = 0; i < populationSize; i++) {			
+			particulas[i][0] = new MLP(numInputs, numHidden, numOutputs);
+			particulas[i][0].randomise();			
+			particulas[i][1] = new MLP(numInputs, numHidden, numOutputs);
+			
+            pBests[i] = new MLP(numInputs, numHidden, numOutputs);
+			pBestScores[i] = 0;
+        }
+        gBest = new MLP(numInputs, numHidden, numOutputs);
+        gBestScore = 0;
+        this.task = task;
+        this.tamPop = populationSize;
+        this.numHidden = numHidden;
+        this.numInputs = numInputs;
+        this.numOutputs = numOutputs;
+        this.evaluationRepetitions = 1;
+    }
+
+    public void nextGeneration() {
+		for (int i = 0; i < tamPop; i++) {
+			particulas[i][1] = new MLP(numInputs, numHidden, numOutputs);
+			particulas[i][1].psoRecombine(particulas[i][0], pBests[i], gBest);
+			
+			float scoreParticula = evaluate(particulas[i][1]);
+			
+			if (scoreParticula > pBestScores[i]) {
+				pBestScores[i] = scoreParticula;
+				pBests[i] = particulas[i][1]; //TODO: fazer hard copy dissae
+			}
+			
+			if (scoreParticula > gBestScore) {
+				gBestScore = scoreParticula;
+				gBest = particulas[i][1]; //TODO: fazer hard copy dissae
+			}
+		}
+		
+		
+		/*
+		
+        for (int i = 0; i < elite; i++) {
+            evaluate(i);
+        }
+        for (int i = elite; i < population.length; i++) {
+            population[i] = population[i - elite].copy();
+            population[i].mutate();
+            evaluate(i);
+        }
+        shuffle();
+        sortPopulationByFitness();*/
+    }
+
+    private float evaluate(MLP agent) {
+		float0 fit = 0;
+		for (int i = 0; i < evaluationRepetitions; i++) {
+            agent.reset();
+            //fit += task.evaluate((Agent) agent)[0]; TODO:changed here
+//            LOGGER.println("which " + which + " fitness " + fitness[which], LOGGER.VERBOSE_MODE.INFO);
+        }
+        fit = fit / evaluationRepetitions;
+        
+        return fit;
+    }
+         /*
+    private void shuffle() {
+        for (int i = 0; i < population.length; i++) {
+            swap(i, (int) (Math.random() * population.length));
+        }
+    }
+
+    private void sortPopulationByFitness() {
+        for (int i = 0; i < population.length; i++) {
+            for (int j = i + 1; j < population.length; j++) {
+                if (fitness[i] < fitness[j]) {
+                    swap(i, j);
+                }
+            }
+        }
+    }
+
+    private void swap(int i, int j) {
+        double cache = fitness[i];
+        fitness[i] = fitness[j];
+        fitness[j] = cache;
+        Evolvable gcache = population[i];
+        population[i] = population[j];
+        population[j] = gcache;
+    }
+                 */
+    public Evolvable[] getBests() {
+        return new Evolvable[]{(Evolvable)gBest};
+    }
+
+    public float[] getBestFitnesses() {
+        return new float[]{gBestScore};  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+}
